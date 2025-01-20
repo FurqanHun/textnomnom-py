@@ -43,7 +43,7 @@ def convert_ppt_to_pptx(ppt_path):
         try:
             import win32com.client
             powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-            powerpoint.Visible = False
+            # powerpoint.Visible = False
             deck = powerpoint.Presentations.Open(ppt_path)
             deck.SaveAs(pptx_path, 24)  # 24 = .pptx format
             deck.Close()
@@ -106,7 +106,7 @@ def convert_pptx_to_pdf(pptx_path):
         try:
             import win32com.client
             powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-            powerpoint.Visible = False  # Fixed this line
+            # powerpoint.Visible = False
             presentation = powerpoint.Presentations.Open(pptx_path)
             presentation.SaveAs(pdf_path, FileFormat=32)  # 32 = ppSaveAsPDF
             presentation.Close()
