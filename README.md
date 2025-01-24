@@ -1,6 +1,6 @@
 # Text Extraction and Conversion Tool
 
-This Python script facilitates the extraction of text from PDF and PowerPoint files, with options to convert PowerPoint presentations to PDF. It supports both individual files and directories, saving extracted text either to a single file or separate files for each processed document.
+This Python script facilitates the extraction of text from PDF and PowerPoint files (including images), with options to convert PowerPoint presentations to PDF. It also includes OCR support for extracting text from images in PDF and PowerPoint files. The script supports both individual files and directories, saving extracted text either to a single file or separate files for each processed document.
 
 ## Features:
 
