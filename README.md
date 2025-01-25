@@ -1,13 +1,14 @@
 # Text Extraction and Conversion Tool
 
-This Python script facilitates the extraction of text from PDF and PowerPoint files (including images), with options to convert PowerPoint presentations to PDF. It also includes OCR support for extracting text from images in PDF and PowerPoint files. The script supports both individual files and directories, saving extracted text either to a single file or separate files for each processed document.
+This Python script extracts text from PDFs and PowerPoint files (including images with OCR), converts PowerPoints to PDFs, and scrapes web pages into Markdown. Supports both single files and directories (recursive processing).
 
 ## Features:
 
-- **Text Extraction:** Extracts text from PDF and PowerPoint (.pptx) files.
-- **PowerPoint Conversion:** Converts PowerPoint presentations (.ppt or .pptx) to PDF format.
-- **Directory Processing:** Processes all supported files within a specified directory, recursively.
+- **Text Extraction:** Pulls text from PDFs and PowerPoints (OCR for images too!).
+- **PowerPoint Conversion:** Converts your PowerPoint files (.ppt/.pptx) to PDF.
+- **Directory Processing:** Processes all supported files within a specified directory (recursively).
 - **Flexible Output:** Saves extracted text to either a single file or individual files for each document.
+- **Web Scraping:** Grabs website content and converts it to clean Markdown.
 
 ## Requirements:
 
