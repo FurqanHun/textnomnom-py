@@ -9,6 +9,17 @@ from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path
 import io
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from markdownify import markdownify as md
+
+# if you have installed the driver, update this path in and make sure to use doble quotes(""), else leave it as None
+GECKO_DRIVER_PATH = "/mnt/qanhdd/some-stuff/geckodriver"
+CHROME_DRIVER_PATH = None
 
 # Configure logging
 LOG_FILE = "file_processing.log"
@@ -20,6 +31,71 @@ logging.basicConfig(
         logging.StreamHandler()  # Also log to console
     ]
 )
+
+#URL part
+def get_driver():
+    # Check for Chrome availability
+    if sys.platform == "win32":
+        chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    else:
+        chrome_path = "/usr/bin/google-chrome"
+
+    if os.path.exists(chrome_path) and CHROME_DRIVER_PATH:
+        chrome_options = ChromeOptions()
+        chrome_options.binary_location = chrome_path
+        chrome_service = ChromeService(executable_path=CHROME_DRIVER_PATH)
+        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+        return driver, "chrome"
+
+    # Check for Firefox availability
+    if sys.platform == "win32":
+        firefox_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+    else:
+        firefox_path = "/usr/bin/firefox"
+
+    if os.path.exists(firefox_path) and GECKO_DRIVER_PATH:
+        firefox_options = FirefoxOptions()
+        firefox_options.binary_location = firefox_path
+        firefox_options.add_argument("--headless")
+        firefox_service = FirefoxService(executable_path=GECKO_DRIVER_PATH)
+        driver = webdriver.Firefox(service=firefox_service, options=firefox_options)
+        return driver, "firefox"
+
+    raise EnvironmentError("Neither Chrome nor Firefox is installed on this system.")
+
+def scrape_and_save(url):
+    logging.info(f"Scraping URL: {url}")
+    try:
+        driver, browser = get_driver()
+        driver.get(url)
+        if "pdf" in driver.current_url:
+            logging.info("PDF file detected. Saving PDF...")
+            pdf_path = os.path.join(os.getcwd(), "temp.pdf")
+            driver.get(driver.current_url)
+            with open(pdf_path, "wb") as file:
+                file.write(driver.page_source.encode("utf-8"))
+            driver.quit()
+            logging.info(f"PDF saved to {pdf_path}")
+            return
+        logging.info(f"Page title: {driver.title}")
+
+    except Exception as e:
+        logging.error(f"Error scraping URL: {e}")
+        return
+
+    body_element = driver.find_element(By.TAG_NAME, "body")
+    html_content = body_element.get_attribute("outerHTML")
+
+    logging.info("Converting HTML to Markdown...")
+    markdown_content = md(html_content)
+    page_title = driver.title.strip().replace(" ", "_").replace("/", "_")
+    filename = f"{page_title}.md"
+
+    logging.info(f"Saving Markdown content to {filename}...")
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write(markdown_content)
+    driver.quit()
+    logging.info(f"Markdown content saved to {filename} using {browser.capitalize()}.")
 
 def extract_text_from_image(file_path):
     """Extract text from image using Tesseract OCR."""
@@ -249,6 +325,10 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
+
+    if path.startswith("http"):
+        scrape_and_save(path)
+        sys.exit(0)
     save_all = "-a" in sys.argv
     convert_pdf = "--convert" in sys.argv and "pdf" in sys.argv
     # trigger_ocr = "-ocr" in sys.argv or "--ocr" in sys.argv
