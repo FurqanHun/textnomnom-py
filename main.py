@@ -21,6 +21,9 @@ from markdownify import markdownify as md
 GECKO_DRIVER_PATH = "/mnt/qanhdd/some-stuff/geckodriver"
 CHROME_DRIVER_PATH = None
 
+CHROMIUM_BASED_BROWSER_PATH = None
+FIREFOX_BASED_BROWSER_PATH = None
+
 # Configure logging
 LOG_FILE = "file_processing.log"
 logging.basicConfig(
@@ -35,23 +38,30 @@ logging.basicConfig(
 #URL part
 def get_driver():
     # Check for Chrome availability
-    if sys.platform == "win32":
-        chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    if CHROMIUM_BASED_BROWSER_PATH != None:
+        chrome_path = CHROMIUM_BASED_BROWSER_PATH
     else:
-        chrome_path = "/usr/bin/google-chrome"
+        if sys.platform == "win32":
+            chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        else:
+            chrome_path = "/usr/bin/google-chrome"
 
     if os.path.exists(chrome_path) and CHROME_DRIVER_PATH:
         chrome_options = ChromeOptions()
         chrome_options.binary_location = chrome_path
+        chrome_options.add_argument("--headless")
         chrome_service = ChromeService(executable_path=CHROME_DRIVER_PATH)
         driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
         return driver, "chrome"
 
     # Check for Firefox availability
-    if sys.platform == "win32":
-        firefox_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+    if FIREFOX_BASED_BROWSER_PATH != None:
+        firefox_path = FIREFOX_BASED_BROWSER_PATH
     else:
-        firefox_path = "/usr/bin/firefox"
+        if sys.platform == "win32":
+            firefox_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+        else:
+            firefox_path = "/usr/bin/firefox"
 
     if os.path.exists(firefox_path) and GECKO_DRIVER_PATH:
         firefox_options = FirefoxOptions()
