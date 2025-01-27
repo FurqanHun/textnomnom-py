@@ -1,4 +1,4 @@
-# Text Extraction and Conversion Tool
+# TextNomNom
 
 This Python script extracts text from PDFs and PowerPoint files (including images with OCR), converts PowerPoints to PDFs, and scrapes web pages into Markdown. Supports both single files and directories (recursive processing).
 

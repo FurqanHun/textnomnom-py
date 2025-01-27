@@ -392,5 +392,6 @@ def main():
 
 
 if __name__ == "__main__":
-    print("\nText extraction and conversion tool - 0xQan\n")
+    print("\nTextNomNom - 0xQan\n")
     main()
+    print("\nExitting...\n")
