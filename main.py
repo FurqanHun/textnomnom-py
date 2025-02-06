@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import logging
 import subprocess
 from PyPDF2 import PdfReader
@@ -73,6 +74,9 @@ def get_driver():
 
     raise EnvironmentError("Neither Chrome nor Firefox is installed on this system.")
 
+def sanitize_filename(filename):
+    return re.sub(r'[<>:"/\\|?*]', '_', filename)
+
 def scrape_and_save(url):
     logging.info(f"Scraping URL: {url}")
     try:
@@ -99,7 +103,8 @@ def scrape_and_save(url):
     logging.info("Converting HTML to Markdown...")
     markdown_content = md(html_content)
     page_title = driver.title.strip().replace(" ", "_").replace("/", "_")
-    filename = f"{page_title}.md"
+    sanitized_title = sanitize_filename(page_title)
+    filename = f"{sanitized_title}.md"
 
     logging.info(f"Saving Markdown content to {filename}...")
     with open(filename, "w", encoding="utf-8") as file:
