@@ -23,7 +23,7 @@ This Python script extracts text from PDFs and PowerPoint files (including image
     - `beautifulsoup4` for parsing HTML content.
     - `markdownify` for converting HTML to markdown.
     - Webdriver for browser automation
-      - [ChromeDriver](https://developer.chrome.com/docs/chromedriver/downloads)
+      - [ChromeDriver](https://developer.chrome.com/docs/chromedriver/)
       - [GeckoDriver](https://github.com/mozilla/geckodriver/tree/release)
 
 - **OCR (Beta Feature):**
@@ -34,7 +34,7 @@ This Python script extracts text from PDFs and PowerPoint files (including image
     - Available in the package manager of most Linux distributions and can be installed on Windows and macOS.
 
   - **`poppler-utils`**: For PDF to text conversion.
-    - [poppler-utils](https://poppler.freedesktop.org/)
+    - [poppler-utils](https://poppler.freedesktop.org/) or you can use prebuilt binaries from third-party sources like [poppler-windows](https://github.com/oschwartz10612/poppler-windows/releases)
     - Available in the package manager of most Linux distributions and can be installed on Windows and macOS.
 
 ## Platform-Specific Notes:
