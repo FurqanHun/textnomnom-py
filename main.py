@@ -35,6 +35,14 @@ logging.basicConfig(
         logging.StreamHandler()  # Also log to console
     ]
 )
+def clear_log():
+    """Clear the content of the log file."""
+    try:
+        with open(LOG_FILE, "w", encoding="utf-8") as file:
+            file.truncate(0)  # Truncate the file to 0 bytes
+        logging.info(f"Log file '{LOG_FILE}' cleared.")
+    except Exception as e:
+        logging.error(f"Error clearing log file: {e}")
 
 #URL part
 def get_driver():
@@ -62,7 +70,7 @@ def get_driver():
         if sys.platform == "win32":
             firefox_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
         else:
-            firefox_path = "/usr/bin/firefox"
+            firefox_path = "/usr/bin/mullvad-browser"
 
     if os.path.exists(firefox_path) and GECKO_DRIVER_PATH:
         firefox_options = FirefoxOptions()
@@ -122,29 +130,32 @@ def extract_text_from_image(file_path):
         logging.error(f"Error processing image file: {file_path}, Error: {e}")
         return None
 
-def extract_text_from_pdf(file_path, trigger_ocr):
-    """Extract text from each page of the PDF."""
+def extract_text_from_pdf(file_path, trigger_ocr, ocr_mix=False):
+    """Extract text from each page of the PDF, optionally with OCR for images."""
     pdf_text = []
     try:
         with open(file_path, "rb") as file:
             reader = PdfReader(file)
 
-            # When OCR is triggered, don't extract regular text, just process images
-            if trigger_ocr:
-                # Get images from each page and run OCR
-                images = convert_from_path(file_path)
-                for image in images:
-                    text = pytesseract.image_to_string(image)
-                    if text:
-                        pdf_text.append(text)
-            else:
-                # Regular text extraction method
-                for page in reader.pages:
-                    text = page.extract_text()
-                    if text:
-                        pdf_text.append(text)
+            for page_num, page in enumerate(reader.pages):
+                # Regular text extraction
+                text = page.extract_text()
+                if text:
+                    pdf_text.append(text)
 
-        logging.info(f"Extracted text from PDF: {file_path}")
+                # OCR extraction if triggered or ocr_mix is True
+                if trigger_ocr or ocr_mix:
+                    try:
+                        images = convert_from_path(file_path, first_page=page_num + 1, last_page=page_num + 1)
+                        if images:
+                            image = images[0]
+                            ocr_text = pytesseract.image_to_string(image)
+                            if ocr_text and ocr_text.strip() not in pdf_text: # Avoid duplicate text
+                                pdf_text.append(f"[OCR from page {page_num + 1}]\n{ocr_text.strip()}")
+                    except Exception as e:
+                        logging.warning(f"Error during OCR on page {page_num + 1}: {e}")
+
+        logging.info(f"Extracted text from PDF: {file_path} (OCR Mix: {ocr_mix})")
     except Exception as e:
         logging.error(f"Error reading the PDF file: {e}")
         return None
@@ -197,7 +208,7 @@ def convert_ppt_to_pptx(ppt_path):
         logging.error("No conversion tools succeeded. Please convert the .ppt manually.")
         return None
 
-def extract_text_from_pptx(file_path, trigger_ocr):
+def extract_text_from_pptx(file_path, trigger_ocr, ocr_mix=False):
     """Extract text from PowerPoint presentation, applying OCR if necessary."""
     pptx_text = []
     try:
@@ -210,21 +221,20 @@ def extract_text_from_pptx(file_path, trigger_ocr):
                 if hasattr(shape, "text") and shape.text.strip():
                     slide_text.append(shape.text.strip())
 
-                # If OCR is triggered and the shape contains an image, process it
-                elif trigger_ocr and hasattr(shape, "image"):
+                # If OCR is triggered or ocr_mix is True and the shape contains an image, process it
+                elif (trigger_ocr or ocr_mix) and hasattr(shape, "image"):
                     logging.info(f"Found image in Slide {slide_number}, triggering OCR...")
                     image = shape.image
                     image_bytes = image.blob
                     image_pil = Image.open(io.BytesIO(image_bytes))
                     text = pytesseract.image_to_string(image_pil)
                     if text:
-                        # slide_text.append(f"[OCR Text from Slide {slide_number}] {text.strip()}")
-                        slide_text.append(text.strip())
+                        slide_text.append(f"[OCR from Slide {slide_number}]\n{text.strip()}")
 
             if slide_text:
                 pptx_text.append(f"[Slide {slide_number}]\n" + "\n".join(slide_text))
 
-        logging.info(f"Extracted text from PowerPoint: {file_path}")
+        logging.info(f"Extracted text from PowerPoint: {file_path} (OCR Mix: {ocr_mix})")
     except Exception as e:
         logging.error(f"Error reading the PowerPoint file: {e}")
         return None
@@ -276,23 +286,24 @@ def convert_pptx_to_pdf(pptx_path):
         logging.error("No conversion tools succeeded. Please convert the .pptx manually.")
         return None
 
-def extract_text_from_file(file_path,trigger_ocr):
+def extract_text_from_file(file_path, trigger_ocr, ocr_mix=False):
     """Extract text based on file type."""
     ext = os.path.splitext(file_path)[1].lower()
     if ext == ".pdf":
-        return extract_text_from_pdf(file_path, trigger_ocr)
+        return extract_text_from_pdf(file_path, trigger_ocr, ocr_mix)
     elif ext == ".pptx":
-        return extract_text_from_pptx(file_path, trigger_ocr)
+        return extract_text_from_pptx(file_path, trigger_ocr, ocr_mix)
     elif ext == ".ppt":
         logging.info(".ppt file detected. Attempting conversion...")
         pptx_path = convert_ppt_to_pptx(file_path)
         if pptx_path:
-            return extract_text_from_pptx(pptx_path, trigger_ocr)
+            return extract_text_from_pptx(pptx_path, trigger_ocr, ocr_mix)
         else:
             logging.error("Failed to process .ppt file.")
             return None
-    elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff"] and trigger_ocr:
-         return extract_text_from_image(file_path)
+    # elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff"] and (trigger_ocr or ocr_mix):
+    elif ext in Image.registered_extensions() and (trigger_ocr or ocr_mix):
+        return extract_text_from_image(file_path)
     else:
         logging.error(f"Unsupported file type: {ext}")
         return None
@@ -306,7 +317,7 @@ def save_to_txt(output_path, text):
     except Exception as e:
         logging.error(f"Failed to save text to {output_path}: {e}")
 
-def process_directory(directory_path, save_all=False, output_file=None, trigger_ocr=False):
+def process_directory(directory_path, save_all=False, output_file=None, trigger_ocr=False, ocr_mix=False):
     """Process all supported files in the directory recursively."""
     all_text = []
     for root, _, files in os.walk(directory_path):
@@ -316,12 +327,11 @@ def process_directory(directory_path, save_all=False, output_file=None, trigger_
 
             file_path = os.path.join(root, file)
             logging.info(f"Processing file: {file_path}")
-            text = extract_text_from_file(file_path, trigger_ocr)
+            text = extract_text_from_file(file_path, trigger_ocr, ocr_mix)
             if text:
                 if save_all:
                     all_text.append(f"### {file_path} ###\n{text}\n\n")
                 else:
-                    # output_path = os.path.splitext(file_path)[0] + ".txt"
                     output_path = os.path.join(os.path.dirname(file_path), "extracted_texts", os.path.splitext(os.path.basename(file_path))[0] + ".txt")
                     os.makedirs(os.path.dirname(output_path), exist_ok=True)
                     save_to_txt(output_path, text)
@@ -331,13 +341,18 @@ def process_directory(directory_path, save_all=False, output_file=None, trigger_
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print("Usage: python main.py <file_or_directory_path> [options]")
+        print("       python main.py clear-log")
         print("Options:")
         print("  -h, --help            Show this help message and exit.")
         print("  -a                    Save all extracted text from files in the directory to a single text file (all_extracted_text.txt).")
         print("  --convert pdf         Convert PowerPoint (.ppt or .pptx) to PDF.")
-        print("  -ocr, --ocr           Trigger OCR extraction for image files.")
-
+        print("  -ocr, --ocr          Trigger OCR extraction for image files.")
+        print("  --ocr-mix             Attempt to extract both regular text and text from images (OCR) in PDF and PPTX files.")
         sys.exit(1)
+
+    if sys.argv[1] == "clear-log":  # Check for 'clear-log' command
+            clear_log()
+            sys.exit(0)
 
     path = sys.argv[1]
 
@@ -346,16 +361,14 @@ def main():
         sys.exit(0)
     save_all = "-a" in sys.argv
     convert_pdf = "--convert" in sys.argv and "pdf" in sys.argv
-    # trigger_ocr = "-ocr" in sys.argv or "--ocr" in sys.argv
     trigger_ocr = True if "-ocr" in sys.argv or "--ocr" in sys.argv else False
+    ocr_mix = "--ocr-mix" in sys.argv
 
     if not os.path.exists(path):
         logging.error(f"Path not found: {path}")
         sys.exit(1)
 
-    # output_file = "all_extracted_text.txt" if save_all else None
-    # output_file = os.path.join(path, "all_extracted_text.txt") if save_all else None
-    output_file = os.path.join(os.path.dirname(path), "extracted_texts", "all_extracted_text.txt")
+    output_file = os.path.join(os.path.dirname(path), "extracted_texts", "all_extracted_text.txt") if save_all else None
 
     if convert_pdf:
         # Convert to PDF if --convert pdf is passed
@@ -381,16 +394,15 @@ def main():
         logging.info(f"Processing directory: {path}")
         output_folder = os.path.join(path, "extracted_texts")
         os.makedirs(output_folder, exist_ok=True)
-        process_directory(path, save_all, output_file, trigger_ocr)
+        process_directory(path, save_all, output_file, trigger_ocr, ocr_mix)
     else:
         logging.info(f"Processing single file: {path}")
-        text = extract_text_from_file(path, trigger_ocr)
+        text = extract_text_from_file(path, trigger_ocr, ocr_mix)
         if text:
             if save_all:
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
                 save_to_txt(output_file, text)
             else:
-                # output_path = os.path.splitext(path)[0] + ".txt"
                 output_path = os.path.join(os.path.dirname(path), "extracted_texts", os.path.splitext(os.path.basename(path))[0] + ".txt")
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 save_to_txt(output_path, text)
