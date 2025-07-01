@@ -1,10 +1,9 @@
-PyPDF2==3.0.1
-python-pptx==1.0.2
-pdf2image==1.17.0
-pillow==11.1.0
-pytesseract==0.3.13
-markdownify==0.14.1
-selenium==4.28.1
-
-# For Windows Only
-pywin32
+PyPDF2
+python-pptx
+pdf2image
+pillow
+pytesseract
+markdownify
+selenium
+inquirer
+tqdm

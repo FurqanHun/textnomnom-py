@@ -1,155 +1,168 @@
-# V1: ARCHIVED!!!
+# TextNomNom v2.0
 
-# TextNomNom
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/FurqanHun/textnomnom-py)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This Python script extracts text from PDFs and PowerPoint files (including images with OCR), converts PowerPoints to PDFs, and scrapes web pages into Markdown. Supports both single files and directories (recursive processing).
+**TextNomNom** is a versatile, cross-platform tool for extracting text from various file formats. It features a powerful command-line interface and a user-friendly interactive menu, with a self-contained environment that handles all Python dependencies automatically.
 
-## Features:
+---
 
-- **Text Extraction:** Pulls text from PDFs and PowerPoints (OCR for images too!).
-- **PowerPoint Conversion:** Converts your PowerPoint files (.ppt/.pptx) to PDF.
-- **Directory Processing:** Processes all supported files within a specified directory (recursively).
-- **Flexible Output:** Saves extracted text to either a single file or individual files for each document.
-- **Web Scraping:** Grabs website content and converts it to clean Markdown.
+## Table of Contents
+* [Features](#features)
+* [Installation & Setup](#installation--setup)
+* [External Dependencies](#external-dependencies-manual-install)
+* [Usage](#usage)
+  * [Interactive Mode](#interactive-mode)
+  * [Command-Line Mode](#command-line-cli-mode)
+* [Configuration](#configuration)
+* [CLI Options](#cli-options)
+* [License](#license)
+---
 
-## Requirements:
+### Features
 
-- **Python 3.x**
-- **Libraries:**
-  - `PyPDF2` for PDF text extraction.
-  - `python-pptx` for PowerPoint text extraction.
-  - `win32com.client` (for Windows users) for PowerPoint to PDF conversion and `.ppt` to `.pptx` conversion (required by the `python-pptx` library).
-  - `unoconv` or `soffice` (for Linux users) for PowerPoint to PDF conversion and `.ppt` to `.pptx` conversion (required by the `python-pptx` library).
-  - **URL Scrapping:**
-    - `selenium` for web scraping.
-    - `beautifulsoup4` for parsing HTML content.
-    - `markdownify` for converting HTML to markdown.
-    - Webdriver for browser automation
-      - [ChromeDriver](https://developer.chrome.com/docs/chromedriver/)
-      - [GeckoDriver](https://github.com/mozilla/geckodriver/tree/release)
+* **Self-Contained Environment:** No more manual `pip install`. The launcher script automatically creates a virtual environment and installs all required Python packages on the first run.
+* **Dual Mode Operation:**
+    * **Interactive Menu:** Run without arguments to launch a user-friendly, step-by-step menu.
+    * **Powerful CLI:** Use command-line arguments for scripting and automation.
+* **Multi-Format Support:** Extracts text from PDFs, modern PowerPoint (`.pptx`), legacy PowerPoint (`.ppt`), and common image formats (JPG, PNG, etc.).
+* **Real-Time Progress Bar:** A dynamic progress bar shows the status when processing directories, updating for every page/slide processed.
+* **Web Scraping:** Provide a URL to scrape its text content into a clean Markdown file.
+* **Advanced OCR:** Can perform OCR on images within PDFs and PowerPoint slides to capture text from all sources.
+* **Cross-Platform & Configurable:** Works on Linux, macOS, and Windows. A central config file allows for easy customization of driver paths and other settings.
 
-- **OCR (Beta Feature):**
-  - `pytesseract`, `Pillow`, and `pdf2image` for OCR-based text extraction.
+---
 
-  - **`tesseract-ocr`**: Required by `pytesseract` for OCR functionality.
-    - [tesseract-ocr GitHub](https://github.com/tesseract-ocr/tesseract)
-    - Available in the package manager of most Linux distributions and can be installed on Windows and macOS.
+### Installation & Setup
 
-  - **`poppler-utils`**: For PDF to text conversion.
-    - [poppler-utils](https://poppler.freedesktop.org/) or you can use prebuilt binaries from third-party sources like [poppler-windows](https://github.com/oschwartz10612/poppler-windows/releases)
-    - Available in the package manager of most Linux distributions and can be installed on Windows and macOS.
+Getting started is designed to be as simple as possible.
 
-## Platform-Specific Notes:
-
-- On **Linux** systems: Uses **LibreOffice** for PowerPoint file conversions (via `soffice` or `unoconv`).
-- On **Windows** systems: Uses **Microsoft Office (PowerPoint)** for PowerPoint file conversions (via `win32com.client`).
-
-tldr; uses LibreOffice on linux systems and ms office (PowerPoint) on windows systems.
-
-## Installation:
-
-1. Install the required Python libraries:
-   ```bash
-   pip install PyPDF2 python-pptx pytesseract pillow pdf2image selenium markdownify
-   ```
-   _beautifusoup4 is a dependency of markdownify, so you don't need to install it separately._
-
-2. For PowerPoint to PDF conversion:
-   - **Windows:** Ensure Microsoft PowerPoint is installed. The script uses `win32com.client` to automate PowerPoint.
-   ```bash
-    pip install pywin32
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/FurqanHun/textnomnom-py.git
+    cd textnomnom-py
     ```
-   - **Linux:** Install `unoconv` or `soffice` (part of LibreOffice).
-      - soffice comes inbuilt with LibreOffice, which pretty much available in all linux distros, and comes as a default in some.
-      - if you wanna use unoconv, you can install that too (which also requires LibreOffice).
 
-3. For OCR-based text extraction:
-    - Install `tesseract-ocr` and `poppler-utils`:
-      - **Linux:** Use the package manager of your distribution.
-        ```bash
-        sudo apt-get install tesseract-ocr poppler-utils
-        ```
-          - Fedora:
-              ```bash
-              sudo dnf install tesseract poppler-utils
-              ```
-      - **Windows:** Download and install `tesseract-ocr` from the [official repository](https://github.com/tesseract-ocr/tesseract)
-      - **Windows:** Download and install `poppler-utils` from the [official repository](https://poppler.freedesktop.org/)
+2.  **(For Linux/macOS)** Make the launcher executable:
+    ```bash
+    chmod +x textnomnom
+    ```
 
-## Usage:
+3.  **Run it!**
+    ```bash
+    ./textnomnom
+    ```
+    The first time you run the script, it will automatically create its virtual environment and install all necessary Python libraries. Subsequent runs will be instant. You can run it with `--config` to modify the PATHS. `--config` or `--version` both run in stage 1, before the launcher checks/sets up the virtual environment.
+
+---
+
+### External Dependencies (Manual Install)
+
+For certain features, you still need to install system-level tools. The script may run without them, but the features might be limited.
+
+* **For OCR (`--ocr`, `--ocr-mix`):** You need **Tesseract**.
+    * **Fedora/CentOS:** `sudo dnf install tesseract`
+    * **Debian/Ubuntu:** `sudo apt-get install tesseract-ocr`
+    * **Windows/macOS:** Install from the [official Tesseract repository](https://github.com/tesseract-ocr/tesseract).
+
+* **For PDF-to-Image Conversion (used by OCR):** You need **Poppler**.
+    * **Fedora/CentOS:** `sudo dnf install poppler-utils`
+    * **Debian/Ubuntu:** `sudo apt-get install poppler-utils`
+    * **Windows:** Download and install from [this Poppler for Windows repo](https://github.com/oschwartz10612/poppler-windows/releases).
+
+* **For `.ppt` to `.pptx` Conversion (Linux only):** You need **LibreOffice**.
+    * This is included by default on many Linux distributions. If not, install it with your package manager (e.g., `sudo dnf install libreoffice`).
+
+---
+
+### Usage
+
+You can run the application in two modes.
+
+#### Interactive Mode
+Simply run the command without any arguments to launch a guided menu.
 
 ```bash
-python main.py <file_or_directory_path> [options]
+./textnomnom
 ```
 
-## Options:
+#### Command-Line (CLI) Mode
+Provide a path or other arguments to run directly from the command line.
 
-- `-h, --help`: Show help message and exit.
-- `-a`: Save all extracted text from files in the directory to a single text file (`all_extracted_text.txt`).
-- `--convert pdf`: Convert PowerPoint (.ppt or .pptx) to PDF.
-- `-ocr, --ocr`: Trigger OCR extraction for image files.
+```bash
+# Process a directory and save all text to one file with OCR
+./textnomnom /path/to/my_docs -a --ocr-mix
 
-### Examples:
+# Scrape a website
+./textnomnom [https://example.com](https://example.com)
 
-1. **Process a Single File:**
-   ```bash
-   python main.py document.pdf
-   ```
-   This command extracts text from `document.pdf` and saves it as `document.txt` in the same directory.
+# Get the version number instantly
+./textnomnom --version
+```
 
-2. **Process a Directory:**
-   ```bash
-   python main.py /path/to/directory
-   ```
-   This command processes all supported files in the specified directory, saving the extracted text to individual `.txt` files within an `extracted_texts` subdirectory.
+---
+### Configuration
+To open the configuration file in your default editor, run:
+``` bash
+./textnomnom --config
+```
+OR
+``` bash
+./textnomnom --config=EDITOR
+```
+Where `EDITOR` is the name of your preferred editor.
 
-3. **Save All Extracted Text to a Single File:**
-   ```bash
-   python main.py /path/to/directory -a
-   ```
-   This command processes all supported files in the specified directory and saves all extracted text to `all_extracted_text.txt` within the `extracted_texts` subdirectory.
+Following is the Default Configuration File:
+``` py
+# app/config_manager.py
 
-4. **Convert PowerPoint to PDF:**
-   ```bash
-   python main.py presentation.pptx --convert pdf
-   ```
-   This command converts `presentation.pptx` to `presentation.pdf` in the same directory.
+# --- Optional ---
+# Define the path for the virtual environment.
+# If set to None or not defined, it defaults to a 'venv' folder in the project root.
+VENV_PATH = "venv"
 
-5. **OCR Extraction from an Image:**
-   ```bash
-   python main.py image.jpg -ocr
-   ```
-   This command extracts text from `image.jpg` using OCR and saves the output as `image.txt` in the same directory.
+# If you have installed drivers, update paths here. Use "" or None.
+GECKO_DRIVER_PATH = None
+CHROME_DRIVER_PATH = None
 
-6. **OCR Extraction from All Image Files in a Directory:**
-   ```bash
-   python main.py /path/to/directory -ocr
-   ```
-   This command processes all image files in the specified directory using OCR, saving extracted text to individual `.txt` files within an `extracted_texts` subdirectory.
+CHROMIUM_BASED_BROWSER_PATH = None
+FIREFOX_BASED_BROWSER_PATH = None
 
-7. **OCR Extraction from Images in a PowerPoint Presentation:**
-   ```bash
-   python main.py presentation.pptx -ocr
-   ```
-   This command extracts text from any images in the PowerPoint presentation `presentation.pptx` using OCR and saves it as `presentation.txt` in the same directory.
+# --- Optional ---
+# Define the directory where logs will be stored.
+# If this is not set, it will default to a 'logs/' folder.
+LOG_DIRECTORY = "logs"
 
-8. **URL Scrapping:**
-   ```bash
-   python main.py https://example.com
-   ```
+# --- Optional ---
+# Set to True to enable logging to a file without console output.
+# The --debug flag will override this and log to both file and console.
+LOGS = False
 
-## Logging:
+# --- Optional ---
+# Define where scraped web content will be saved.
+# If this is set to None or is not defined, it will default to your system's Downloads folder.
+SCRAPED_FILES_DIR = None
 
-The script logs its operations to `file_processing.log` and also outputs logs to the console.
+```
+---
 
-### Notes:
+### CLI Options
 
-- Ensure that the necessary conversion tools (`win32com.client`, `unoconv`, or `soffice`) are installed and accessible in your system's PATH.
-- The script skips `.txt` files within the `extracted_texts` subdirectory to avoid processing already extracted text.
-- Tessaract OCR is a beta feature, and it may not work as expected. It is recommended to use it only for image files.
-- Tessaract and poppler-utils are must for OCR and PDF to text conversion respectively.
-- The `selenium` library requires a WebDriver for browser automation. Download the appropriate WebDriver for your browser and add its path in the script if you plan to use the URL scraping feature.
+| Argument                  | Description                                                                 |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `path`                    | Path to a file, directory, or a URL to process.                             |
+| `-a`, `--save-all`        | Combine all extracted text from a directory into a single file.             |
+| `--ocr`                   | Force OCR on image files.                                                   |
+| `--ocr-mix`               | Extract both standard text and OCR text from PDFs and PPTX files.           |
+| `--clear-log`             | Clears the content of the log file.                                         |
+| `--config[=editor]`       | Opens the config file in the default editor (or a specified one).           |
+| `-v`, `--version`         | Shows the application's version number.                                     |
+| `--debug`                 | Enables detailed logging to the console and `logs/textnomnom.log`.          |
+| `--verbose`               | Shows detailed setup steps when the launcher runs.                          |
+| `-h`, `--help`            | Shows the help message for command-line options.                            |
 
-## License:
+---
 
-This project is licensed under the [GPL-3.0 License](LICENSE). Feel free to use, modify, and distribute the code as per the terms of the license.
+### License
+
+This project is now licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.

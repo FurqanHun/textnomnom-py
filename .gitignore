@@ -1,0 +1,28 @@
+# --- Python Virtual Environments ---
+venv/
+.venv/
+env/
+.env/
+
+# --- Python Cache Files ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Application Output & Generated Folders ---
+logs/
+*.log
+extracted_texts/
+downloads/
+
+# --- IDE & Editor Configuration ---
+.vscode/
+.idea/
+.ropeproject/
+
+# --- Launcher Flag File ---
+# Ignores the flag file created by the launcher script inside the venv.
+# This rule is technically covered by ignoring the venv folder itself,
+# but is included for clarity.
+.setup_complete
