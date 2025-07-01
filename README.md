@@ -1,6 +1,6 @@
 # TextNomNom v2.0
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/FurqanHun/textnomnom-py)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/FurqanHun/textnomnom-py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **TextNomNom** is a versatile, cross-platform tool for extracting text from various file formats. It features a powerful command-line interface and a user-friendly interactive menu, with a self-contained environment that handles all Python dependencies automatically.
