@@ -18,6 +18,36 @@ if '--version' in sys.argv or '-v' in sys.argv:
     print(f"TextNomNom v{VERSION}")
     sys.exit(0)
 
+if '--help' in sys.argv or '-h' in sys.argv:
+    # Determine the venv python path just for this check
+    try:
+        from app.config_manager import VENV_PATH
+        if not VENV_PATH: VENV_DIR = os.path.join(PROJECT_ROOT, "venv")
+        else: VENV_DIR = VENV_PATH
+    except (ImportError, AttributeError):
+        VENV_DIR = os.path.join(PROJECT_ROOT, "venv")
+
+    is_windows = sys.platform == "win32"
+    python_executable = "python.exe" if is_windows else "python"
+    venv_python = os.path.join(VENV_DIR, "Scripts" if is_windows else "bin", python_executable)
+    main_script_path = os.path.join(PROJECT_ROOT, "main.py")
+
+    # If the venv exists, show the real help message from main.py
+    if os.path.exists(venv_python):
+        subprocess.run([venv_python, main_script_path, '--help'])
+    else:
+        # If the venv doesn't exist
+        print("Usage: textnomnom [path | URL] [options]")
+        print("\nTextNomNom's environment is not yet set up. Run the script once to initialize.")
+        print("This pre-flight help shows meta-commands. Run again after setup for full options.")
+        print("\nAvailable meta-commands:")
+        print("  --version, -v        Show application version and exit.")
+        print("  --config[=editor]    Open the configuration file.")
+        print("  --help, -h           Show this help message.")
+        print("  --verbose            Show detailed setup steps on first run.")
+
+    sys.exit(0)
+
 # Handle --config
 if any(arg.startswith('--config') for arg in sys.argv):
     editor = None

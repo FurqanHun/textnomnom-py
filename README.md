@@ -28,6 +28,7 @@
 * **Multi-Format Support:** Extracts text from PDFs, modern PowerPoint (`.pptx`), legacy PowerPoint (`.ppt`), and common image formats (JPG, PNG, etc.).
 * **Real-Time Progress Bar:** A dynamic progress bar shows the status when processing directories, updating for every page/slide processed.
 * **Web Scraping:** Provide a URL to scrape its text content into a clean Markdown file.
+* **Conversion:** Converts PPT and PPTX into PDF. Bulk conversion (full directory) is also supported.
 * **Advanced OCR:** Can perform OCR on images within PDFs and PowerPoint slides to capture text from all sources.
 * **Cross-Platform & Configurable:** Works on Linux, macOS, and Windows. A central config file allows for easy customization of driver paths and other settings.
 
@@ -154,6 +155,7 @@ SCRAPED_FILES_DIR = None
 | `-a`, `--save-all`        | Combine all extracted text from a directory into a single file.             |
 | `--ocr`                   | Force OCR on image files.                                                   |
 | `--ocr-mix`               | Extract both standard text and OCR text from PDFs and PPTX files.           |
+| `--convert PDF`           | Converts the PPT and PPTX into PDF (Supports directories)                   |
 | `--clear-log`             | Clears the content of the log file.                                         |
 | `--config[=editor]`       | Opens the config file in the default editor (or a specified one).           |
 | `-v`, `--version`         | Shows the application's version number.                                     |
