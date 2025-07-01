@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import shutil
+
+# --- STAGE 1: Handle Meta-Commands First ---
+# These commands should run instantly without touching the venv.
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE_PATH = os.path.join(PROJECT_ROOT, "app", "config_manager.py")
+
+# Handle --version
+if '--version' in sys.argv or '-v' in sys.argv:
+    # Temporarily add project to path to import the version
+    sys.path.insert(0, PROJECT_ROOT)
+    from app import __version__ as VERSION
+    print(f"TextNomNom v{VERSION}")
+    sys.exit(0)
+
+# Handle --config
+if any(arg.startswith('--config') for arg in sys.argv):
+    editor = None
+    for arg in sys.argv:
+        if arg.startswith('--config'):
+            if "=" in arg:
+                editor = arg.split('=', 1)[1]
+            break
+
+    if not editor:
+        if sys.platform == "win32":
+            subprocess.run(['start', CONFIG_FILE_PATH], shell=True)
+            sys.exit(0)
+        elif sys.platform == "darwin":
+            editor = 'open'
+        else:
+            editor = 'nano' if shutil.which('nano') else 'vi'
+
+    print(f"-> Opening configuration file with {editor}...")
+    try:
+        subprocess.run([editor, CONFIG_FILE_PATH])
+    except FileNotFoundError:
+        print(f"❌ Editor '{editor}' not found.", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Failed to open editor. Error: {e}", file=sys.stderr)
+
+    sys.exit(0)
+
+# --- STAGE 2: Proceed with Full Environment Setup ---
+# If we've reached this point, no meta-commands were used.
+
+from pathlib import Path
+
+# This controls the verbosity of the launcher script itself.
+is_verbose = '--verbose' in sys.argv
+
+# Now it's safe to import the configuration for the venv path
+try:
+    from app.config_manager import VENV_PATH
+    if not VENV_PATH: # Handles case where VENV_PATH = None
+        VENV_DIR = os.path.join(PROJECT_ROOT, "venv")
+    else:
+        VENV_DIR = VENV_PATH
+except (ImportError, AttributeError):
+    VENV_DIR = os.path.join(PROJECT_ROOT, "venv")
+
+is_windows = sys.platform == "win32"
+python_executable = "python.exe" if is_windows else "python"
+pip_executable = "pip.exe" if is_windows else "pip"
+venv_python = os.path.join(VENV_DIR, "Scripts" if is_windows else "bin", python_executable)
+venv_pip = os.path.join(VENV_DIR, "Scripts" if is_windows else "bin", pip_executable)
+
+def setup_environment():
+    # Check/Create Virtual Environment
+    if not os.path.exists(venv_python):
+        if is_verbose: print(f"-> Virtual environment not found. Creating one at: {VENV_DIR}")
+        subprocess.run([sys.executable, "-m", "venv", VENV_DIR], check=True, capture_output=not is_verbose)
+        if is_verbose: print("✔ Virtual environment created.")
+
+    # Install Dependencies if needed
+    setup_complete_flag = os.path.join(VENV_DIR, ".setup_complete")
+    if not os.path.exists(setup_complete_flag):
+        if is_verbose: print("-> New environment detected. Installing dependencies...")
+        try:
+            core_reqs = os.path.join(PROJECT_ROOT, "requirements.txt")
+            win_reqs = os.path.join(PROJECT_ROOT, "requirements-win.txt")
+            if is_verbose: print("   - Installing core packages...")
+            process = subprocess.Popen([venv_pip, "install", "-r", core_reqs, "-q"], stderr=subprocess.PIPE, text=True)
+            _, stderr = process.communicate()
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, process.args, stderr=stderr)
+            if is_windows and os.path.exists(win_reqs):
+                if is_verbose: print(f"   - Windows detected. Installing packages from {os.path.basename(win_reqs)}")
+                process = subprocess.Popen([venv_pip, "install", "-r", win_reqs, "-q"], stderr=subprocess.PIPE, text=True)
+                _, stderr = process.communicate()
+                if process.returncode != 0:
+                    raise subprocess.CalledProcessError(process.returncode, process.args, stderr=stderr)
+            if is_verbose: print("✔ Dependencies installed successfully.")
+            Path(setup_complete_flag).touch()
+        except subprocess.CalledProcessError as e:
+            error_output = e.stderr.lower() if e.stderr else ""
+            network_errors = ["could not resolve host", "network is unreachable", "timed out", "temporary failure in name resolution"]
+            if any(err in error_output for err in network_errors):
+                print("\n❌ Network Error: Failed to download dependencies.", file=sys.stderr)
+                print("   Please check your internet connection and try again.", file=sys.stderr)
+                sys.exit(1)
+            elif "operation cancelled by user" in error_output:
+                raise KeyboardInterrupt
+            else:
+                print("\n❌ A pip error occurred during dependency installation:", file=sys.stderr)
+                print(e.stderr, file=sys.stderr)
+                sys.exit(1)
+
+# --- Main Execution Block ---
+try:
+    setup_environment()
+except KeyboardInterrupt:
+    print("\nSetup cancelled by user. Exiting.")
+    sys.exit(0)
+
+if is_verbose:
+    print("-" * 20)
+    print("Starting TextNomNom Application...")
+    print("-" * 20)
+
+cli_args = [arg for arg in sys.argv[1:] if arg != '--verbose']
+main_script_path = os.path.join(PROJECT_ROOT, "main.py")
+
+try:
+    proc = subprocess.run([venv_python, main_script_path] + cli_args)
+    sys.exit(proc.returncode)
+except KeyboardInterrupt:
+    pass
