@@ -45,28 +45,35 @@ def run_interactive_menu():
     Displays an interactive menu for the user to choose an action.
     """
     print("Welcome to TextNomNom Interactive Mode!")
+
     while True:
+        # This is the main menu question
         questions = [
             inquirer.List('action',
                           message="What would you like to do?",
-                          choices=['Process a File or Directory', 'Scrape a Web URL', 'Clear Log File', 'Exit'])
+                          choices=[
+                              'Process a File or Directory',
+                              'Scrape a Web URL',
+                              'Clear Log File',
+                              'Exit'
+                          ])
         ]
-        try:
-            answers = inquirer.prompt(questions)
-            if not answers: raise KeyboardInterrupt
-            action = answers['action']
-        except KeyboardInterrupt:
-            print("\nExiting interactive mode.")
-            break
+
+        answers = inquirer.prompt(questions)
+        # If user presses Ctrl+C on the menu, inquirer returns None
+        if not answers:
+            raise KeyboardInterrupt
+
+        action = answers['action']
 
         if action == 'Process a File or Directory':
-            path_q = [inquirer.Text('path', message="Enter the path to the file or directory")]
-            path_answers = inquirer.prompt(path_q)
-            if not path_answers:
-                print("\nOperation cancelled.")
+            # Use standard input() for reliability; it raises KeyboardInterrupt on Ctrl+C
+            path = input("[?] Enter the path to the file or directory: ").strip().strip("'\"")
+
+            # If the user just presses Enter, the path is empty, so we loop back
+            if not path:
                 continue
 
-            path = path_answers['path'].strip()
             if not os.path.exists(path):
                 print(f"❌ Error: Path not found: {path}")
                 continue
@@ -94,11 +101,12 @@ def run_interactive_menu():
                     for file_path in file_list:
                         pbar.set_description(f"-> Analyzing {os.path.basename(file_path)}")
                         text = process_file(file_path, ocr_mix=ocr_mix, callback=pbar.update)
-                        if text and save_all:
-                            all_texts.append(f"### {file_path} ###\n{text}\n\n")
-                        elif text:
-                            output_path = get_output_path(file_path)
-                            save_text_to_file(output_path, text)
+                        if text:
+                            if save_all:
+                                all_texts.append(f"### {file_path} ###\n{text}\n\n")
+                            else:
+                                output_path = get_output_path(file_path)
+                                save_text_to_file(output_path, text)
 
                 if save_all and all_texts:
                     output_file = os.path.join(path, "all_extracted_text.txt")
@@ -106,22 +114,32 @@ def run_interactive_menu():
                     print(f"\n✅ All text combined and saved to: {output_file}")
 
             else: # It's a file
-                print(f"Processing file: {path}")
-                text = process_file(path, ocr_mix=ocr_mix)
-                if text:
-                    output_path = get_output_path(path)
-                    save_text_to_file(output_path, text)
+                file_ext = os.path.splitext(path)[1].lower()
+                if file_ext in ['.pdf', '.pptx']:
+                    total_steps = get_total_steps([path])
+                    with tqdm(total=total_steps, desc=f"-> Analyzing {os.path.basename(path)}", unit="step") as pbar:
+                        text = process_file(path, ocr_mix=ocr_mix, callback=pbar.update)
+                        if text:
+                            output_path = get_output_path(path)
+                            save_text_to_file(output_path, text)
+                else:
+                    print(f"Processing file: {path}")
+                    text = process_file(path, ocr_mix=ocr_mix)
+                    if text:
+                        output_path = get_output_path(path)
+                        save_text_to_file(output_path, text)
 
         elif action == 'Scrape a Web URL':
-            url_q = [inquirer.Text('url', message="Enter the URL to scrape")]
-            url_answers = inquirer.prompt(url_q)
-            if url_answers and url_answers['url']:
-                scrape_and_save(url_answers['url'])
+            url = input("[?] Enter the URL to scrape: ").strip().strip("'\"")
+            if url: # Only proceed if the user entered something
+                scrape_and_save(url)
+
         elif action == 'Clear Log File':
             clear_log_file()
+
         elif action == 'Exit':
-            print("Exiting interactive mode.")
-            break
+            # Trigger the main KeyboardInterrupt handler for a single, clean exit message
+            raise KeyboardInterrupt
 
         print("\n" + "="*20 + "\n")
 
