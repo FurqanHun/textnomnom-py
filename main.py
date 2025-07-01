@@ -410,5 +410,6 @@ def main():
 
 if __name__ == "__main__":
     print("\nTextNomNom - 0xQan\n")
+    print("V1: ARCHIVED!!! Update NOW!!! https://github.com/FurqanHun/textnomnom-py")
     main()
     print("\nExitting...\n")
