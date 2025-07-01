@@ -94,7 +94,7 @@ Provide a path or other arguments to run directly from the command line.
 ./textnomnom /path/to/my_docs -a --ocr-mix
 
 # Scrape a website
-./textnomnom [https://example.com](https://example.com)
+./textnomnom https://example.com
 
 # Get the version number instantly
 ./textnomnom --version
