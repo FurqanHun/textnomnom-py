@@ -1,28 +1,53 @@
 # app/config_manager.py
+import os
 
-# --- Optional ---
-# Define the path for the virtual environment.
-# If set to None or not defined, it defaults to a 'venv' folder in the project root.
+# ==============================================================================
+# TextNomNom Configuration Management
+# ==============================================================================
+
+# VENV_PATH (str):
+# The directory path to the Python virtual environment. Used by the subprocess 
+# runner to locate the correct environment binaries. 
+# Default: "venv" (resolves to the 'venv' folder in the project root directory).
 VENV_PATH = "venv"
 
-# If you have installed drivers, update paths here. Use "" or None.
+# GECKO_DRIVER_PATH (str / None):
+# The file path to the Geckodriver executable used for Firefox-based scraping.
+# Set to None if Geckodriver is not needed or is installed in the system PATH.
 GECKO_DRIVER_PATH = None
+
+# CHROME_DRIVER_PATH (str / None):
+# The file path to the Chromedriver executable used for Chrome/Chromium scraping.
+# Set to None if Chromedriver is not needed or is installed in the system PATH.
 CHROME_DRIVER_PATH = None
 
+# CHROMIUM_BASED_BROWSER_PATH (str / None):
+# The binary path of a Chromium-based web browser (e.g. Chrome, Brave, Chromium).
+# If None, the application falls back to standard system paths.
 CHROMIUM_BASED_BROWSER_PATH = None
+
+# FIREFOX_BASED_BROWSER_PATH (str / None):
+# The binary path of a Firefox-based web browser (e.g. Firefox, Mullvad Browser).
+# If None, the application falls back to standard system paths.
 FIREFOX_BASED_BROWSER_PATH = None
 
-# --- Optional ---
-# Define the directory where logs will be stored.
-# If this is not set, it will default to a 'logs/' folder.
+# LOG_DIRECTORY (str):
+# The directory name or path where logging output files will be written.
+# Default: "logs"
 LOG_DIRECTORY = "logs"
 
-# --- Optional ---
-# Set to True to enable logging to a file without console output.
-# The --debug flag will override this and log to both file and console.
+# LOGS (bool):
+# Toggle for file-based logging. If set to True, logs are written to the file
+# specified in LOG_DIRECTORY without stdout console output, unless --debug is set.
+# Default: False
 LOGS = False
 
-# --- Optional ---
-# Define where scraped web content will be saved.
-# If this is set to None or is not defined, it will default to your system's Downloads folder.
+# SCRAPED_FILES_DIR (str / None):
+# Directory where scraped markdown and document contents will be saved.
+# If set to None, defaults to the user's system Downloads directory.
 SCRAPED_FILES_DIR = None
+
+# MAX_OCR_WORKERS (int):
+# The maximum number of worker threads to use in ThreadPoolExecutor for OCR tasks.
+# Defaults to one less than the total CPU cores to keep the system responsive.
+MAX_OCR_WORKERS = max(1, (os.cpu_count() or 4) - 1)

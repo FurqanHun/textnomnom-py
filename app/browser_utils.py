@@ -20,13 +20,12 @@ def get_driver():
     """
     Initializes and returns a web driver, providing specific, actionable errors.
     """
-    # --- Attempt 1: Chrome ---
+    # Chrome/Chromium Driver Initialization
     chrome_path = (
         CHROMIUM_BASED_BROWSER_PATH or
         ("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" if sys.platform == "win32" else "/usr/bin/google-chrome")
     )
     if os.path.exists(chrome_path):
-        # If browser is found, the driver becomes the critical missing piece.
         if not CHROME_DRIVER_PATH or not os.path.exists(CHROME_DRIVER_PATH):
             raise EnvironmentError(
                 "❌ Chrome is installed, but its driver is missing or not configured.\n"
@@ -40,16 +39,15 @@ def get_driver():
             print("-> Initializing Chrome driver...")
             return webdriver.Chrome(service=chrome_service, options=chrome_options), "chrome"
         except Exception as e:
-            # If it fails to start for another reason, we'll just let it fall through to try Firefox.
+            # Fall back to Firefox if Chrome driver initialization fails
             logging.warning(f"Chrome found but failed to start: {e}")
 
-    # --- Attempt 2: Firefox ---
+    # Firefox Driver Initialization
     firefox_path = (
         FIREFOX_BASED_BROWSER_PATH or
         ("C:\\Program Files\\Mozilla Firefox\\firefox.exe" if sys.platform == "win32" else "/usr/bin/firefox")
     )
     if os.path.exists(firefox_path):
-        # If browser is found, the driver is the critical part.
         if not GECKO_DRIVER_PATH or not os.path.exists(GECKO_DRIVER_PATH):
             raise EnvironmentError(
                 "❌ Firefox is installed, but its driver is missing or not configured.\n"
@@ -65,8 +63,6 @@ def get_driver():
         except Exception as e:
             logging.warning(f"Firefox found but failed to start: {e}")
 
-    # --- Final Fallback ---
-    # If we get here, neither browser was found or could be launched.
     raise EnvironmentError(
         "Could not find a working browser installation. "
         "Please install Chrome or Firefox and configure its driver path."

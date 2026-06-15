@@ -8,18 +8,16 @@ import shutil
 
 
 def convert_ppt_to_pptx(ppt_path):
-    """Converts a .ppt file to .pptx using available tools."""
+    """Converts a .ppt file to .pptx using available system tools."""
     pptx_path = os.path.splitext(ppt_path)[0] + ".pptx"
     temp_dir = os.path.dirname(ppt_path)
 
-    # --- Logic for Windows ---
     if sys.platform == "win32":
         try:
-            # Import is placed here to avoid errors on non-Windows systems
             import win32com.client
             powerpoint = win32com.client.Dispatch("PowerPoint.Application")
             deck = powerpoint.Presentations.Open(ppt_path)
-            # Format 24 corresponds to .pptx
+            # Format 24 corresponds to pptx
             deck.SaveAs(pptx_path, 24)
             deck.Close()
             powerpoint.Quit()
@@ -29,7 +27,6 @@ def convert_ppt_to_pptx(ppt_path):
             logging.error(f"Windows PowerPoint automation failed: {e}")
             raise FileNotFoundError(f"Could not convert {os.path.basename(ppt_path)}. Ensure Microsoft PowerPoint is installed.")
 
-    # --- Logic for Linux/macOS ---
     if not shutil.which("soffice"):
         raise FileNotFoundError("LibreOffice is not installed or 'soffice' is not in your system's PATH. Cannot convert .ppt files.")
 
@@ -44,24 +41,21 @@ def convert_ppt_to_pptx(ppt_path):
     except (subprocess.CalledProcessError, FileNotFoundError, RuntimeError) as e:
         logging.error(f"LibreOffice conversion failed: {e}")
 
-    # If all methods fail
     logging.error(f"No suitable tool could convert .ppt file: {ppt_path}")
     return None
 
 
 def convert_pptx_to_pdf(pptx_path):
-    """Converts a .pptx file to .pdf using available tools."""
+    """Converts a .pptx file to .pdf using available system tools."""
     pdf_path = os.path.splitext(pptx_path)[0] + ".pdf"
     temp_dir = os.path.dirname(pptx_path)
 
-    # --- Logic for Windows ---
     if sys.platform == "win32":
         try:
             import win32com.client
             powerpoint = win32com.client.Dispatch("PowerPoint.Application")
-            # Open presentation without a window
             presentation = powerpoint.Presentations.Open(pptx_path, WithWindow=False)
-            # FileFormat 32 corresponds to PDF
+            # Format 32 corresponds to PDF
             presentation.SaveAs(pdf_path, 32)
             presentation.Close()
             powerpoint.Quit()
@@ -71,7 +65,6 @@ def convert_pptx_to_pdf(pptx_path):
             logging.error(f"Windows PowerPoint automation failed: {e}")
             raise FileNotFoundError(f"Could not convert {os.path.basename(pptx_path)}. Ensure Microsoft PowerPoint is installed.")
 
-    # --- Logic for Linux/macOS ---
     if not shutil.which("soffice"):
         raise FileNotFoundError("LibreOffice is not installed or 'soffice' is not in your system's PATH. Cannot convert .pptx files.")
 

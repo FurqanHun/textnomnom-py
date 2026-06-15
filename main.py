@@ -15,33 +15,38 @@ from app import __version__ as VERSION
 from app.config_manager import LOGS
 from app.file_handlers.conversions import convert_ppt_to_pptx, convert_pptx_to_pdf
 
+
 def get_output_path(input_path):
     """Generates the standard output path for a given input file."""
     output_dir = os.path.join(os.path.dirname(input_path), "extracted_texts")
     base_name = os.path.splitext(os.path.basename(input_path))[0]
     return os.path.join(output_dir, f"{base_name}.txt")
 
+
 def get_total_steps(file_list):
     """Counts the total number of pages/slides in a list of files for the progress bar."""
     total = 0
     print("-> Analyzing files to determine total progress...")
-    # Use leave=False so this progress bar disappears after completion
+    # Hide file analysis progress bar upon completion
     for file_path in tqdm(file_list, desc="Analyzing files", unit="file", leave=False):
         ext = os.path.splitext(file_path)[1].lower()
         try:
             if ext == '.pdf':
                 with open(file_path, 'rb') as f:
-                    # Use strict=False to be more lenient with potentially malformed PDFs
+                    # Allow extraction of malformed PDFs
                     reader = PdfReader(f, strict=False)
                     total += len(reader.pages)
             elif ext == '.pptx':
                 prs = Presentation(file_path)
                 total += len(prs.slides)
             else:
-                total += 1 # Other files count as one step
+                # Non-paginated files count as a single step
+                total += 1
         except Exception:
-            total += 1 # If a file is unreadable, still count it as one step
+            # Count unreadable files as a single step to avoid progress stalling
+            total += 1
     return total
+
 
 def run_interactive_menu():
     """
@@ -71,9 +76,11 @@ def run_interactive_menu():
         if action == 'Process a File or Directory':
             try:
                 path = input("[?] Enter the path to the file or directory: ").strip().strip("'\"")
-                if not path: continue
+                if not path:
+                    continue
             except KeyboardInterrupt:
-                print() # Move to a new line after ^C
+                # Handle user cancellation
+                print()
                 continue
 
             if not os.path.exists(path):
@@ -115,7 +122,7 @@ def run_interactive_menu():
                     save_text_to_file(output_file, "\n".join(all_texts))
                     print(f"\n✅ All text combined and saved to: {output_file}")
 
-            else: # It's a file
+            else:
                 file_ext = os.path.splitext(path)[1].lower()
                 if file_ext in ['.pdf', '.pptx']:
                     total_steps = get_total_steps([path])
@@ -134,7 +141,8 @@ def run_interactive_menu():
         elif action == 'Scrape a Web URL':
             try:
                 url = input("[?] Enter the URL to scrape: ").strip().strip("'\"")
-                if url: scrape_and_save(url)
+                if url:
+                    scrape_and_save(url)
             except KeyboardInterrupt:
                 print()
                 continue
@@ -142,7 +150,8 @@ def run_interactive_menu():
         elif action == 'Convert PowerPoint to PDF':
             try:
                 path = input("[?] Enter the path to the PowerPoint file: ").strip().strip("'\"")
-                if path: handle_pdf_conversion(path)
+                if path:
+                    handle_pdf_conversion(path)
             except KeyboardInterrupt:
                 print()
                 continue
@@ -151,10 +160,11 @@ def run_interactive_menu():
             clear_log_file()
 
         elif action == 'Exit':
-            # Trigger the main KeyboardInterrupt handler for a single, clean exit message
+            # Trigger clean exit via KeyboardInterrupt
             raise KeyboardInterrupt
 
         print("\n" + "="*20 + "\n")
+
 
 def _convert_single_file_to_pdf(file_path):
     """Internal helper to convert a single PowerPoint file."""
@@ -165,9 +175,8 @@ def _convert_single_file_to_pdf(file_path):
 
     logging.info(f"-> Converting {filename}...")
     try:
-        # If it's a .ppt, it must first be converted to .pptx
+        # Convert legacy .ppt format to .pptx first
         if filename.lower().endswith('.ppt'):
-            logging.info("   - Legacy .ppt format detected, converting to .pptx first...")
             path_for_conversion = convert_ppt_to_pptx(file_path)
             if not path_for_conversion:
                 logging.info(f"❌ Aborting PDF conversion for {filename} due to .ppt to .pptx failure.")
@@ -185,6 +194,7 @@ def _convert_single_file_to_pdf(file_path):
         print(f"❌ Dependency Error for {filename}: {e}", file=sys.stderr)
     except Exception as e:
         print(f"❌ An unexpected error occurred with {filename}: {e}", file=sys.stderr)
+
 
 def handle_pdf_conversion(path):
     """Orchestrates conversion for a file or all valid files in a directory."""
@@ -209,8 +219,9 @@ def handle_pdf_conversion(path):
         for file_path in tqdm(ppt_files, desc="Converting", unit="file"):
             _convert_single_file_to_pdf(file_path)
 
-    else: # It's a single file
+    else:
         _convert_single_file_to_pdf(path)
+
 
 def main():
     """
@@ -228,7 +239,7 @@ def main():
     parser.add_argument("--convert", type=str, metavar="FORMAT", help="Convert a file to the specified format (e.g., 'pdf').")
     args = parser.parse_args()
 
-    # Setup logging based on --debug flag OR LOGS config from the start.
+    # Initialize logging configuration
     if args.debug or LOGS:
         setup_logging(debug_mode=args.debug)
 
@@ -276,10 +287,10 @@ def main():
                 save_text_to_file(output_file, "\n".join(all_texts))
                 print(f"\n✅ All text combined and saved to: {output_file}")
 
-        else: # It's a file
+        else:
             file_ext = os.path.splitext(args.path)[1].lower()
 
-            # Check if it's a file type that supports page-by-page progress
+            # Enable granular progress tracking for paginated documents
             if file_ext in ['.pdf', '.pptx']:
                 total_steps = get_total_steps([args.path])
                 with tqdm(total=total_steps, desc=f"-> Analyzing {os.path.basename(args.path)}", unit="step") as pbar:
@@ -299,12 +310,13 @@ def main():
         run_interactive_menu()
         return "interactive"
 
+
 if __name__ == "__main__":
     print(f"\nTextNomNom v{VERSION} - 0xQan\n")
     try:
         run_mode = main()
         if run_mode == "cli":
-             print("\nExiting...\n")
+            print("\nExiting...\n")
     except KeyboardInterrupt:
         print("\nOperation cancelled by user. Exiting.")
         sys.exit(0)

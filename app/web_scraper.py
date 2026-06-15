@@ -10,7 +10,7 @@ from selenium.common.exceptions import WebDriverException
 from markdownify import markdownify as md
 from app.browser_utils import get_driver
 
-# --- Safely import the save directory from config ---
+# Retrieve save directory from config
 try:
     from app.config_manager import SCRAPED_FILES_DIR
 except ImportError:
@@ -19,15 +19,12 @@ except ImportError:
 
 def get_save_directory():
     """
-    Determines the correct directory to save scraped files.
-
-    Uses the path from config if it's set, otherwise defaults to the
-    system's Downloads folder.
+    Determines the directory to save scraped files.
+    Defaults to the user's Downloads folder if no configuration path is set.
     """
     if SCRAPED_FILES_DIR:
         return SCRAPED_FILES_DIR
     else:
-        # This works on Windows, Linux, and macOS
         return os.path.join(Path.home(), "Downloads")
 
 
@@ -85,7 +82,6 @@ def scrape_and_save(url):
 
     except WebDriverException as e:
         error_text = str(e).lower()
-        # This list now includes the Firefox-specific network error
         network_errors = [
             "net::err_internet_disconnected",
             "dns_probe_finished_no_internet",
@@ -100,7 +96,6 @@ def scrape_and_save(url):
             logging.error(f"WebDriverException while scraping '{url}'. Full error: {e}")
 
     except Exception as e:
-        # Catch any other unexpected errors
         print("❌ An unknown error occurred. Run with --debug to see technical details.", file=sys.stderr)
         logging.error(f"Failed to scrape '{url}'. Full error: {e}")
     finally:

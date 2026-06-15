@@ -26,7 +26,6 @@ def process_file(file_path, trigger_ocr=False, ocr_mix=False, callback=None):
     Selects the correct handler to extract text from a file, with error handling.
     """
     try:
-        # --- This is the main dispatch logic ---
         ext = os.path.splitext(file_path)[1].lower()
         logging.info(f"Dispatching file for processing: {file_path}")
 
@@ -49,17 +48,13 @@ def process_file(file_path, trigger_ocr=False, ocr_mix=False, callback=None):
             return None
 
     except FileNotFoundError as e:
-        # --- Catch the specific error for missing dependencies ---
         print(f"\n❌ Dependency Error: {e}", file=sys.stderr)
-        # We need to tell the progress bar this file is "done" so it doesn't stall.
+        # Trigger callback to prevent progress bar stalling
         if callback:
-            # For a file-by-file progress bar, a single update is fine. For a
-            # page-by-page bar, this prevents a stall but won't be perfectly accurate.
             callback()
         return None
 
     except Exception as e:
-        # ---Catch any other unexpected errors during processing ---
         print(f"\n❌ An unexpected error occurred while processing {os.path.basename(file_path)}.", file=sys.stderr)
         logging.error(f"Error processing {file_path}: {e}")
         if callback:

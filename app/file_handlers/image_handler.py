@@ -4,9 +4,10 @@ import shutil
 from PIL import Image
 import pytesseract
 
+
 def extract_text_from_image(file_path):
     """Extracts text from an image file using Tesseract OCR."""
-    # Proactively check for Tesseract
+    # Validate Tesseract installation
     if not shutil.which("tesseract"):
         raise FileNotFoundError("Tesseract is not installed or is not in your system's PATH. Cannot perform OCR on images.")
 
